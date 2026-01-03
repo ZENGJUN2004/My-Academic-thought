@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文艺理论智能工作站 - 全格式版</title>
+    <!-- 引入文件解析库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <style>
+        :root { 
+            --primary-color: #8c1c13; 
+            --bg-color: #f4f1ea; 
+            --sidebar-color: #2c3e50; 
+        }
+        
+        body { 
+            font-family: 'PingFang SC', 'Microsoft YaHei', serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden;
+        }
+
+        /* 侧边栏样式 */
+        #sidebar { 
+            width: 320px; 
+            background-color: var(--sidebar-color); 
+            color: white; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2); 
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        /* 主内容区样式 */
+        #main-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            overflow: hidden; 
+            box-sizing: border-box;
+        }
+
+        .container { 
+            background: white; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            box-sizing: border-box;
+        }
+
+        h2 { 
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--primary-color); 
+            padding-bottom: 10px; 
+            margin-top: 0; 
+            font-size: 20px;
+        }
+
+        h3, h4 { margin-top: 0; font-weight: 500; }
+
+        textarea { 
+            width: 100%; 
+            height: 250px; 
+            margin: 15px 0; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            resize: none; 
+            font-size: 15px; 
+            line-height: 1.6; 
+            background-color: #fffcf5; 
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        /* 按钮通用样式 */
+        .btn { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold; 
+            transition: all 0.3s; 
+            display: inline-block;
+            text-align: center;
+        }
+        .btn:hover { background-color: #a0231a; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* 侧边栏按钮样式 */
+        .btn-secondary { 
+            background-color: rgba(255,255,255,0.1); 
+            margin-bottom: 10px; 
+            width: 100%; 
+            font-size: 14px; 
+            text-align: left; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-secondary:hover { 
+            background-color: rgba(255,255,255,0.2); 
+        }
+
+        /* 输出区域样式 */
+        #output { 
+            flex: 1; 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #fdfdfd; 
+            border: 1px solid #eee; 
+            border-left: 5px solid var(--primary-color); 
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+            line-height: 1.8; 
+            font-size: 15px; 
+            color: #333;
+        }
+
+        /* 侧边栏文件框 */
+        .file-box { 
+            background: rgba(255,255,255,0.1); 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+        }
+
+        #status { 
+            font-size: 12px; 
+            color: #f1c40f; 
+            margin-top: 8px; 
+            min-height: 1.2em;
+        }
+
+        /* 错误提示样式 */
+        .error-msg { 
+            color: #c0392b; 
+            background: #fdecea; 
+            padding: 15px; 
+            border-radius: 4px; 
+            border: 1px solid #fadbd8; 
+            line-height: 1.5;
+        }
+
+        /* 输入框样式修正 */
+        input[type="file"] {
+            color: white;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        input[type="file"]::webkit-file-upload-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h3>⚙️ 研究工作站</h3>
+    
+    <div class="file-box">
+        <h4>📂 素材导入</h4>
+        <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
+        <div id="status">支持 TXT, DOCX, PDF</div>
+    </div>
+    
+    <h4>📝 智能指令</h4>
+    <button class="btn btn-secondary" onclick="setTask('润色')">✨ 学术语言润色</button>
+    <button class="btn btn-secondary" onclick="setTask('迁移')">✍️ 文稿风格迁移</button>
+    <button class="btn btn-secondary" onclick="setTask('大纲')">📋 自动拟定提纲</button>
+</div>
+
+<div id="main-content">
+    <div class="container">
+        <h2>🎭 理论分析与写作</h2>
+        
+        <textarea id="userInput" placeholder="素材解析内容将显示在此处..."></textarea>
+        
+        <div style="text-align: right;">
+            <button id="submitBtn" class="btn" onclick="askAI()">开始深度对话 / 处理</button>
+        </div>
+
+        <div id="output">结果将在此处呈现...</div>
+    </div>
+</div>
+
+<script>
+    /**
+     * 配置区域
+     * 请确保您的 API Key 和模型名称正确填写在此处
+     */
+    const CONFIG = {
+        API_KEY: "sk-d901f4d443dd4b93acdccff48ed6d7be", // 您的 API Key
+        MODEL_NAME: "qwen3-32b-ft-202601031456-a010-fcf97447", // 修正后的模型名称
+        BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    };
+
+    // 初始化 PDF.js Worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    /**
+     * 智能指令点击处理
+     */
+    function setTask(type) {
+        const input = document.getElementById('userInput');
+        const prompts = {
+            '润色': "请运用深厚的文艺理论功底，对以下内容进行学术化润色，提升其理论深度与逻辑性：\n\n",
+            '迁移': "请将以下内容改写为学术规范的文艺批评风格，注重术语准确性与论证严密性：\n\n",
+            '大纲': "请基于以下素材，设计一份逻辑严密、结构清晰的学术论文大纲：\n\n"
+        };
+        
+        // 如果当前框内有内容，且不是以前缀开头的，则追加，否则覆盖
+        const prefix = prompts[type];
+        if (input.value && !input.value.startsWith(prefix)) {
+            input.value = prefix + input.value;
+        } else if (!input.value.startsWith(prefix)) {
+            input.value = prefix + input.value;
+        }
+    }
+
+    /**
+     * 文件读取与解析逻辑
+     */
+    document.getElementById('fileInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        const statusEl = document.getElementById('status');
+        const inputEl = document.getElementById('userInput');
+        
+        if (!file) return;
+
+        statusEl.innerText = `正在解析 ${file.name}...`;
+        statusEl.style.color = "#f1c40f";
+        
+        try {
+            let text = "";
+            
+            if (file.type === "application/pdf") {
+                text = await parsePDF(file);
+            } else if (file.name.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({arrayBuffer});
+                text = result.value;
+            } else if (file.type === "text/plain") {
+                text = await file.text();
+            } else {
+                throw new Error("不支持的文件格式");
+            }
+
+            // 截断过长文本以免超出上下文限制 (可选)
+            if (text.length > 15000) {
+                text = text.substring(0, 15000) + "\n\n[提示: 内容过长，已自动截断前15000字]";
+            }
+
+            inputEl.value = text;
+            statusEl.innerText = `✅ ${file.name} 解析成功！`;
+            statusEl.style.color = "#2ecc71";
+
+        } catch (err) {
+            console.error(err);
+            statusEl.innerText = `❌ 解析失败: ${err.message}`;
+            statusEl.style.color = "#e74c3c";
+            alert("文件解析失败，请检查文件是否损坏。");
+        }
+    });
+
+    /**
+     * 解析 PDF 文件
+     */
+    async function parsePDF(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        let fullText = "";
+        
+        // 限制最大页数解析，防止卡死
+        const maxPages = Math.min(pdf.numPages, 50); 
+
+        for (let i = 1; i <= maxPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map(item => item.str).join(' ');
+            fullText += `--- 第 ${i} 页 ---\n${pageText}\n\n`;
+        }
+        
+        if (pdf.numPages > 50) {
+            fullText += "\n[提示: 文档超过50页，仅解析了前50页。]";
+        }
+        
+        return fullText;
+    }
+
+    /**
+     * AI 调用逻辑
+     */
+    async function askAI() {
+        const userInput = document.getElementById('userInput').value.trim();
+        const outputDiv = document.getElementById('output');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!userInput) {
+            alert("请先提供素材或输入内容");
+            return;
+        }
+
+        // UI 状态更新
+        outputDiv.innerText = "正在调动微调模型进行理论思维，请稍候...";
+        outputDiv.style.color = "var(--primary-color)";
+        submitBtn.disabled = true;
+        submitBtn.innerText = "处理中...";
+
+        try {
+            const response = await fetch(CONFIG.BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${CONFIG.API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: CONFIG.MODEL_NAME,
+                    messages: [
+                        { 
+                            "role": "system", 
+                            "content": "你是一位文艺理论研究专家，擅长学术润色、理论建构与深度文本分析。请直接输出分析结果，无需寒暄。" 
+                        },
+                        { "role": "user", "content": userInput }
+                    ],
+                    // 关键修复：显式设置 enable_thinking 为 false
+                    // 这是为了解决 qwen3-32b 模型在非流式调用下的报错问题
+                    enable_thinking: false, 
+                    temperature: 0.3
+                })
+            });
+
+            const data = await response.json();
+
+            // 错误处理
+            if (!response.ok) {
+                throw new Error(data.error?.message || `HTTP Error: ${response.status}`);
+            }
+
+            // 检查返回格式
+            if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+                const resultText = data.choices[0].message.content;
+                outputDiv.innerText = resultText;
+                outputDiv.style.color = "#333";
+            } else {
+                throw new Error("API 返回的数据格式异常，未找到 content 字段。");
+            }
+
+        } catch (err) {
+            console.error("API Error:", err);
+            outputDiv.innerHTML = `<div class="error-msg">
+                <strong>❌ 调用失败：</strong><br>
+                ${err.message}<br><br>
+                <small>建议检查：1. 网络连接；2. API Key 是否有效；3. 模型是否已成功部署。</small>
+            </div>`;
+        } finally {
+            // 恢复按钮状态
+            submitBtn.disabled = false;
+            submitBtn.innerText = "开始深度对话 / 处理";
+        }
+    }
+</script>
+</body>
+</html>
